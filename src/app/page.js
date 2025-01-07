@@ -12,11 +12,18 @@ export default function Home() {
   useEffect(() => {
     const fetchLocations = async () => {
       try {
-        const response = await fetch("./api/locations.json"); // Fetch from local JSON file
+        const response = await fetch("/api/potholes");
         const data = await response.json();
-        setLocations(data);
+        setLocations(
+          data.map((item) => ({
+            locationName: item.locationName,
+            locationLatitude: parseFloat(item.locationLatitude),
+            locationLongitude: parseFloat(item.locationLongitude),
+            locationAreaCategory: item.locationAreaCategory,
+          }))
+        );
       } catch (error) {
-        console.error("Error fetching locations data:", error);
+        console.error("Error fetching location data:", error);
       }
     };
 
@@ -25,7 +32,7 @@ export default function Home() {
 
   return (
     <div>
-      <h1>Pothole & Animal Prone Areas</h1>
+      <h1>Pothole Map</h1>
       <Map locations={locations} />
     </div>
   );

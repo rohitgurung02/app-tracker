@@ -27,9 +27,10 @@ const Map = ({ locations }) => {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const leafletMap = L.map("map").setView([41.823989, -71.412834], 13);
+      const leafletMap = L.map("map").setView([41.823989, -71.412834], 13); // Default center
       setMap(leafletMap);
 
+      // Add a tile layer
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
       }).addTo(leafletMap);
@@ -43,7 +44,7 @@ const Map = ({ locations }) => {
   useEffect(() => {
     if (map) {
       const userIcon = L.icon({
-        iconUrl: "https://img.icons8.com/ios-filled/50/0000FF/marker.png",
+        iconUrl: "https://img.icons8.com/ios-filled/50/0000FF/marker.png", // Blue marker
         iconSize: [32, 32],
         iconAnchor: [16, 32],
         popupAnchor: [0, -32],
@@ -52,7 +53,6 @@ const Map = ({ locations }) => {
       let watchId = null;
 
       if (navigator.geolocation) {
-        // Explain to the user why location access is needed
         console.log("Requesting location access...");
 
         watchId = navigator.geolocation.watchPosition(
@@ -68,6 +68,9 @@ const Map = ({ locations }) => {
                 .bindPopup("You are here!");
               setUserMarker(marker);
             }
+
+            // Center the map on the user's location
+            map.setView([latitude, longitude], 15);
 
             // Check proximity to locations
             locations.forEach((location) => {

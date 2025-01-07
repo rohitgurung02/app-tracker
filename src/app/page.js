@@ -7,34 +7,26 @@ import { useState, useEffect } from "react";
 const Map = dynamic(() => import("../components/Map"), { ssr: false });
 
 export default function Home() {
-  const [potholes, setPotholes] = useState([]);
+  const [locations, setLocations] = useState([]);
 
   useEffect(() => {
-    const fetchPotholes = async () => {
-      const apiUrl = "https://data.providenceri.gov/api/views/tisk-wsvu/rows.json?accessType=DOWNLOAD";
+    const fetchLocations = async () => {
       try {
-        const response = await fetch(apiUrl);
+        const response = await fetch("./api/locations.json"); // Fetch from local JSON file
         const data = await response.json();
-
-        const potholesData = data.data.map((item) => ({
-          latitude: parseFloat(item[14]),
-          longitude: parseFloat(item[15]),
-          description: item[8] || "Pothole",
-        }));
-
-        setPotholes(potholesData);
+        setLocations(data);
       } catch (error) {
-        console.error("Error fetching pothole data:", error);
+        console.error("Error fetching locations data:", error);
       }
     };
 
-    fetchPotholes();
+    fetchLocations();
   }, []);
 
   return (
     <div>
-      <h1>Pothole Map</h1>
-      <Map potholes={potholes} />
+      <h1>Pothole & Animal Prone Areas</h1>
+      <Map locations={locations} />
     </div>
   );
 }

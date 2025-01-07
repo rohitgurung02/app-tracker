@@ -1,0 +1,21 @@
+[
+    {
+      "locationName": "Pothole Area 1",
+      "locationLatitude": 41.8240,
+      "locationLongitude": -71.4128,
+      "locationAreaCategory": "Potholes"
+    },
+    {
+      "locationName": "Animal Prone Area 1",
+      "locationLatitude": 41.8265,
+      "locationLongitude": -71.4145,
+      "locationAreaCategory": "Animal Prone Area"
+    },
+    {
+      "locationName": "Pothole Area 2",
+      "locationLatitude": 41.8222,
+      "locationLongitude": -71.4110,
+      "locationAreaCategory": "Potholes"
+    }
+  ]
+  

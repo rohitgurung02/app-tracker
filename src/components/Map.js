@@ -1,62 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
 
-const Map = ({ potholes }) => {
-  const [map, setMap] = useState(null);
+// Dynamically import the Map component
+const Map = dynamic(() => import("../components/Map"), { ssr: false });
+
+export default function Home() {
+  const [potholes, setPotholes] = useState([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const leafletMap = L.map("map").setView([41.823989, -71.412834], 13);
-      setMap(leafletMap);
+    const fetchPotholes = async () => {
+      const apiUrl = "https://data.providenceri.gov/api/views/tisk-wsvu/rows.json?accessType=DOWNLOAD";
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
 
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(leafletMap);
+        const potholesData = data.data.map((item) => ({
+          latitude: parseFloat(item[14]),
+          longitude: parseFloat(item[15]),
+          description: item[8] || "Pothole",
+        }));
 
-      return () => {
-        leafletMap.remove();
-      };
-    }
+        setPotholes(potholesData);
+      } catch (error) {
+        console.error("Error fetching pothole data:", error);
+      }
+    };
+
+    fetchPotholes();
   }, []);
 
-  useEffect(() => {
-    if (map) {
-      const userIcon = L.icon({
-        iconUrl: "https://img.icons8.com/ios-filled/50/0000FF/marker.png",
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
-      });
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            map.setView([latitude, longitude], 15);
-            L.marker([latitude, longitude], { icon: userIcon })
-              .addTo(map)
-              .bindPopup("You are here!")
-              .openPopup();
-          },
-          (error) => console.error("Error retrieving location:", error)
-        );
-      }
-
-      potholes.forEach((pothole) => {
-        const { latitude, longitude, description } = pothole;
-        if (latitude && longitude) {
-          L.marker([latitude, longitude])
-            .addTo(map)
-            .bindPopup(description || "Pothole");
-        }
-      });
-    }
-  }, [map, potholes]);
-
-  return <div id="map" style={{ height: "500px", width: "100%" }}></div>;
-};
-
-export default Map;
+  return (
+    <div>
+      <h1>Pothole Map</h1>
+      <Map potholes={potholes} />
+    </div>
+  );
+}

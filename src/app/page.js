@@ -1,7 +1,10 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
-import Map from "../components/Map";
+
+// Dynamically import the Map component
+const Map = dynamic(() => import("../components/Map"), { ssr: false });
 
 export default function Home() {
   const [potholes, setPotholes] = useState([]);
@@ -27,10 +30,6 @@ export default function Home() {
 
     fetchPotholes();
   }, []);
-
-  if (typeof window === "undefined") {
-    return null; // Prevent server-side rendering
-  }
 
   return (
     <div>

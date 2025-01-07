@@ -56,10 +56,6 @@ const Map = ({ potholes }) => {
     }
   }, [map, potholes]);
 
-  if (typeof window === "undefined") {
-    return null; // Prevent server-side rendering
-  }
-
   return <div id="map" style={{ height: "500px", width: "100%" }}></div>;
 };
 

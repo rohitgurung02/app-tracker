@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useState, useEffect } from "react";
 import Map from "../components/Map";
@@ -8,7 +8,7 @@ export default function Home() {
 
   useEffect(() => {
     const fetchPotholes = async () => {
-      const apiUrl = "";
+      const apiUrl = "https://data.providenceri.gov/api/views/tisk-wsvu/rows.json?accessType=DOWNLOAD";
       try {
         const response = await fetch(apiUrl);
         const data = await response.json();
@@ -27,6 +27,10 @@ export default function Home() {
 
     fetchPotholes();
   }, []);
+
+  if (typeof window === "undefined") {
+    return null; // Prevent server-side rendering
+  }
 
   return (
     <div>

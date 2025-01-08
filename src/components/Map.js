@@ -1,13 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 
 const Map = ({ locations }) => {
-  const [map, setMap] = useState(null);
-  const [userMarker, setUserMarker] = useState(null);
+  const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState(null);
+  const [notifiedLocations, setNotifiedLocations] = useState(new Set()); // Track alerted locations
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const toRad = (value) => (value * Math.PI) / 180;
@@ -25,93 +23,85 @@ const Map = ({ locations }) => {
     return R * c; // Distance in meters
   };
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const leafletMap = L.map("map").setView([41.823989, -71.412834], 13); // Default center
-      setMap(leafletMap);
+  const handleProximityAlerts = (latitude, longitude) => {
+    locations.forEach((location) => {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        location.locationLatitude,
+        location.locationLongitude
+      );
 
-      // Add a tile layer
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      }).addTo(leafletMap);
-
-      return () => {
-        leafletMap.remove();
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    if (map) {
-      const userIcon = L.icon({
-        iconUrl: "https://img.icons8.com/ios-filled/50/0000FF/marker.png", // Blue marker
-        iconSize: [32, 32],
-        iconAnchor: [16, 32],
-        popupAnchor: [0, -32],
-      });
-
-      let watchId = null;
-
-      if (navigator.geolocation) {
-        console.log("Requesting location access...");
-
-        watchId = navigator.geolocation.watchPosition(
-          (position) => {
-            setLocationError(null); // Clear any previous error
-            const { latitude, longitude } = position.coords;
-
-            if (userMarker) {
-              userMarker.setLatLng([latitude, longitude]);
-            } else {
-              const marker = L.marker([latitude, longitude], { icon: userIcon })
-                .addTo(map)
-                .bindPopup("You are here!");
-              setUserMarker(marker);
-            }
-
-            // Center the map on the user's location
-            map.setView([latitude, longitude], 15);
-
-            // Check proximity to locations
-            locations.forEach((location) => {
-              const distance = calculateDistance(
-                latitude,
-                longitude,
-                location.locationLatitude,
-                location.locationLongitude
-              );
-
-              if (distance <= 100) { // Within 100 meters
-                alert(`Caution: ${location.locationAreaCategory} near ${location.locationName}`);
-              }
-            });
-          },
-          (error) => {
-            console.error("Error retrieving location:", error);
-            setLocationError("Location access denied or unavailable.");
-          },
-          {
-            enableHighAccuracy: true,
-            maximumAge: 0,
-            timeout: 10000,
-          }
-        );
-      } else {
-        setLocationError("Geolocation is not supported by this browser.");
+      if (distance <= 10 && !notifiedLocations.has(location.locationName)) {
+        // Alert user and add location to notified set
+        alert(`Caution: ${location.locationAreaCategory} near ${location.locationName}`);
+        setNotifiedLocations((prev) => new Set(prev).add(location.locationName));
+      } else if (distance > 10) {
+        // Reset alert for this location when user moves away
+        setNotifiedLocations((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(location.locationName);
+          return newSet;
+        });
       }
+    });
+  };
 
-      return () => {
-        if (watchId !== null) {
-          navigator.geolocation.clearWatch(watchId);
+  useEffect(() => {
+    let watchId = null;
+
+    if (navigator.geolocation) {
+      console.log("Requesting location access...");
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setLocationError(null);
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ latitude, longitude });
+
+          handleProximityAlerts(latitude, longitude);
+        },
+        (error) => {
+          console.error("Error retrieving location:", error);
+          setLocationError("Location access denied or unavailable.");
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000, // Allow slight caching
+          timeout: 10000,
         }
-      };
+      );
+    } else {
+      setLocationError("Geolocation is not supported by this browser.");
     }
-  }, [map, locations, userMarker]);
+
+    return () => {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
+  }, [locations, notifiedLocations]);
 
   return (
     <div>
       {locationError && <p style={{ color: "red" }}>{locationError}</p>}
-      <div id="map" style={{ height: "500px", width: "100%" }}></div>
+      <h2>User Location</h2>
+      {userLocation ? (
+        <p>
+          Latitude: {userLocation.latitude}, Longitude: {userLocation.longitude}
+        </p>
+      ) : (
+        <p>Retrieving location...</p>
+      )}
+
+      <h2>Predefined Locations</h2>
+      <ul>
+        {locations.map((location, index) => (
+          <li key={index}>
+            {location.locationName} - {location.locationAreaCategory}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 };
